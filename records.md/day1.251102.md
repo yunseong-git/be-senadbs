@@ -49,7 +49,6 @@ skills (Skill): skillIndex, description 등을 포함하는 스킬 객체의 배
 heroes (ObjectId, ref: 'Hero'): 덱을 구성하는 3명(가정)의 영웅 _id 배열.
 
 skillReservation (SkillReservation):
-
 heroIndex와 skillIndex를 사용해 스킬 예약 순서를 저장, 문자열이 아닌 인덱스 기반으로 데이터 무결성 확보
 
 2.4. BattleLog
