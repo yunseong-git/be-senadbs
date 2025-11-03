@@ -13,7 +13,7 @@ export class Skill {
   cooldown?: number; // 쿨타임 (선택)
 }
 
-@Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
+@Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } })
 export class Hero {
   @Prop({ required: true, unique: true })
   name: string; // 영웅 이름 (예: 루디)
@@ -24,7 +24,7 @@ export class Hero {
   @Prop({ required: true, index: true })
   type: string; // 유형 (예: 방어형, 공격형)
 
-  // ⭐️ 스킬 배열: 문자열이 아닌 Skill 객체의 배열
+  //스킬 배열: 문자열이 아닌 Skill 객체의 배열
   @Prop({ type: [Skill] })
   skills: Skill[];
 }
