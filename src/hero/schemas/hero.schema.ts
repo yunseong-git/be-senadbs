@@ -1,16 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { SkillType } from 'src/common/enums/hero.enum';
 
 @Schema({ _id: false }) // 스킬 객체 자체는 ID가 필요 없음
 export class Skill {
-  @Prop({ required: true })
-  skillName: string;
+  @Prop({ required: true, enum: SkillType })
+  skillIndex: SkillType;
 
   @Prop({ required: true })
   description: string;
-
-  @Prop()
-  cooldown?: number; // 쿨타임 (선택)
 }
 
 @Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } })

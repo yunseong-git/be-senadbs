@@ -20,8 +20,12 @@ DATE: 2025-11-03
 
 * 모든 도메인 API 작성시 재사용될 가능성을 고려해 Type, Class 작성 / DTO는 느슨하게라도 처음부터 작성
 
-## 2. 공통사함
+## 2. 공통
 
 * `Schemas(ver2)`:  네이밍 컨벤션 안맞는 부분 수정, battlelog와 defensedeckguide에 version필드 추가 
 
-### 2.1. User
+## 3. User
+
+## 4. Hero
+
+## 5. Defense-set

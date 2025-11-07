@@ -1,14 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Schema as MongooseSchema, HydratedDocument } from 'mongoose';
-
+/*
 @Schema({ _id: false })
-class DailyLimit { //하루 작성제한
+export class DailyLimit { //하루 작성제한
   @Prop({ default: 0 })
   count: number;
 
   @Prop({ default: () => new Date() })
   lastReset: Date;
 }
+  */
 
 @Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } })
 export class User {
@@ -26,12 +27,13 @@ export class User {
   @Prop({ type: String, enum: ['user', 'admin'], default: 'user' })
   role: string;
 
+  /*
   @Prop({ type: MongooseSchema.Types.Map, of: DailyLimit })
   dailyLimits: {
     combatLog: DailyLimit;
     defenseGuide: DailyLimit;
   };
-
+*/
   @Prop({ type: String, required: false })
   currentHashedRefreshToken?: string;
 }

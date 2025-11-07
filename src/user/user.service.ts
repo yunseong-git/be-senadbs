@@ -40,7 +40,7 @@ export class UserService {
     //문서반환이 아닌 상태리포트만 필요하기에, findByIdAndUpdate보다 효율적(i/o 1단계 감소)
     await this.userModel.updateOne(
       { _id: userId },
-      { $set: { current_hashed_refresh_token: hashedRefreshToken } },
+      { $set: { currentHashedRefreshToken: hashedRefreshToken } },
     );
   }
 }

@@ -10,6 +10,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import * as Joi from 'joi';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
+import { DefenseSetModule } from './defense-set/defense-set.module';
+import { BattleLogModule } from './battle-log/battle-log.module';
 
 @Module({
   imports: [
@@ -18,12 +20,12 @@ import { APP_GUARD } from '@nestjs/core';
       isGlobal: true,
       envFilePath: '.env',
       validationSchema: Joi.object({
-        MONGODB_URI: Joi.string().required(),
+        MONGO_URI: Joi.string().required(),
         JWT_ACCESS_SECRET: Joi.string().required(),
         JWT_ACCESS_EXPIRATION: Joi.number().required(),
         JWT_REFRESH_SECRET: Joi.string().required(),
         JWT_REFRESH_EXPIRATION: Joi.number().required(),
-        BCRYPT_HASH_ROUNDS: Joi.number().required(),
+        BCRYPT_SALT_ROUNDS: Joi.number().required(),
       }),
     }),
     // MongooseModule 비동기 설정
@@ -31,13 +33,15 @@ import { APP_GUARD } from '@nestjs/core';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.getOrThrow<string>('MONGODB_URI'),
+        uri: configService.getOrThrow<string>('MONGO_URI'),
       }),
     }),
     DevModule,
     AuthModule,
     UserModule,
-    HeroModule
+    HeroModule,
+    DefenseSetModule,
+    BattleLogModule
   ],
   controllers: [AppController],
   providers: [

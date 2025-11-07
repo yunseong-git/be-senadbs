@@ -1,4 +1,4 @@
-# SENADBS project day1 : schemas(ver1)
+# SENADBS project day1 : init
 
 DATE: 2025-11-02
 

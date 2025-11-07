@@ -50,12 +50,12 @@ export class AuthService {
     //DB조회
     const user = await this.userService.findById(payload.sub);
     if (!user || !user.currentHashedRefreshToken) {
-      throw new UnauthorizedException('Access Denied');
+      throw new UnauthorizedException('Access Denied1');
     }
     //RT 비교
     const isMatch = await bcrypt.compare(refreshToken, user.currentHashedRefreshToken,);
     if (!isMatch) {
-      throw new UnauthorizedException('Access Denied');
+      throw new UnauthorizedException('Access Denied2');
     }
     //new AT 발급
     const newAccessToken = await this.issueAccessToken(user);
