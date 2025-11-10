@@ -5,15 +5,18 @@ import { UserPayload } from 'src/auth/dto/payload.dto';
 import { CheckResourceModel } from 'src/common/decorators/check-resource-model.decorator';
 import { ResourceOwnerGuard } from 'src/common/guards/resource-owner.guard';
 import { User } from 'src/common/decorators/user.decorator';
-import { BattleLog } from 'src/dev/schemas/battle-log.schema';
-import type { BattleLogDocument } from 'src/dev/schemas/battle-log.schema';
+import { BattleLog } from './schemas/battle-log.schema';
+import type { BattleLogDocument } from './schemas/battle-log.schema';
 import { Document } from 'src/common/decorators/document.decorator';
+import { CreateBattleLogDto } from './dto/create-battle-log.dto';
+import { QueryBattleLogDto } from './dto/query-battle-log.dto';
+import { UpdateBattleLogDto } from './dto/update-battle-log.dto';
 
 @Controller('battle-log')
 export class BattleLogController {
   constructor(private readonly battleLogService: BattleLogService) { }
 
-  /**신규 방어덱셋 작성 */
+  /**신규 배틀로그 작성 */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createDto: CreateBattleLogDto, @User() user: UserPayload) {
@@ -21,19 +24,19 @@ export class BattleLogController {
     return this.battleLogService.create(createDto, user.userId);
   }
 
-  /**신규 방어덱셋 조회 */
+  /**신규 배틀로그 조회 */
   @Get()
-  findAll(@Query() dto: QuerybattleLogDto) {
+  findAll(@Query() dto: QueryBattleLogDto) {
     return this.battleLogService.findAll(dto);
   }
 
-  /**모든 방어덱셋 조회 */
+  /**모든 배틀로그 조회 */
   @Get('my')
   findMyGuides(@User() user: UserPayload) {
     return this.battleLogService.findMyGuides(user.userId);
   }
 
-  /**특정 방어덱셋 조회 */
+  /**특정 배틀로그 조회 */
   @Get('detail/:id')
   findOne(@Param('id', ParseObjectIdPipe) id: string) {
     return this.battleLogService.findOne(id);
@@ -43,11 +46,11 @@ export class BattleLogController {
   @Patch(':id')
   @UseGuards(ResourceOwnerGuard) // 소유권 가드 적용
   @CheckResourceModel(BattleLog)
-  update(@Document() doc: BattleLogDocument, @Body() dto: UpdatebattleLogDto) {
+  update(@Document() doc: BattleLogDocument, @Body() dto: UpdateBattleLogDto) {
     return this.battleLogService.update(doc, dto);
   }
 
-  /**내가 작성한 방어팀셋 삭제 */
+  /**내가 작성한 배틀로그 삭제 */
   @Delete(':id')
   @UseGuards(ResourceOwnerGuard) // 소유권 가드 적용
   @CheckResourceModel(BattleLog)

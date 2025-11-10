@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { DefenseSetModule } from './defense-set/defense-set.module';
 import { BattleLogModule } from './battle-log/battle-log.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { BattleLogModule } from './battle-log/battle-log.module';
     UserModule,
     HeroModule,
     DefenseSetModule,
-    BattleLogModule
+    BattleLogModule,
+    StatsModule
   ],
   controllers: [AppController],
   providers: [

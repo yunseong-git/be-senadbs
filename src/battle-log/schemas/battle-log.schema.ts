@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Query, Types } from 'mongoose';
 import { User } from '../../user/schemas/user.schema';
 import { Hero } from 'src/hero/schemas/hero.schema';
-import { BattleEvaluation } from '../common/enums/battle-log.enum';
+import { BattleEvaluation } from './battle-log.enum';
 import { DeckInfo } from '../../common/schemas/deck-info.schema';
 
 @Schema({
@@ -58,17 +58,40 @@ export class BattleLog {
 export type BattleLogDocument = HydratedDocument<BattleLog>;
 export const BattleLogSchema = SchemaFactory.createForClass(BattleLog);
 
-// index 목록
+// pre-hook list
+
+// 1. isDeleted 조회
+BattleLogSchema.pre(/^find/, function (this: Query<BattleLogDocument, BattleLogDocument>, next) {
+  if (this.getFilter().isDeleted == null) {
+    this.where({ isDeleted: false });
+  }
+  next();
+},
+);
+
+// index list
 
 // 1. "내가 쓴 로그" 검색용
 BattleLogSchema.index({ userId: 1, isDeleted: 1 });
 
-// 2. "방어덱 영웅" 검색용 (핵심 기능)
-// 'defense_deck.heroes' 배열에 특정 영웅ID가 포함되어 있는지 검색
-BattleLogSchema.index({ "defenseDeck.heroes": 1, isDeleted: 1 });
-
 // 3. "추천순" 정렬용
-BattleLogSchema.index({ upvoteCount: -1, isDeleted: 1 });
+BattleLogSchema.index({
+  "defenseDeck.heroes": 1, // 1순위: 방어덱 필터
+  upvoteCount: -1,       // 2순위: 추천순 정렬
+  isDeleted: 1,
+});
 
 // 4. "최신순" 정렬용
-BattleLogSchema.index({ createdAt: -1, isDeleted: 1 });
+BattleLogSchema.index({
+  "defenseDeck.heroes": 1, // 1순위: 방어덱 필터
+  createdAt: -1,         // 2순위: 최신순 정렬
+  isDeleted: 1,
+});
+
+// 5. 공격덱 기준 
+BattleLogSchema.index({
+  "defenseDeck.heroes": 1,
+  "attackDeck.heroes": 1,
+  result: 1, // 승/패 결과
+  isDeleted: 1,
+});
