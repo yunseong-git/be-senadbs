@@ -1,9 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Query, Types } from 'mongoose';
 import { User } from '../../user/schemas/user.schema';
-import { Hero } from 'src/hero/schemas/hero.schema';
-import { BattleEvaluation } from './battle-log.enum';
-import { DeckInfo } from '../../common/schemas/deck-info.schema';
+import { BattleEvaluation, BattleResult, BattleSpeed } from './battle-log.enum';
+import { DeckInfo } from './deck-info.schema';
 
 @Schema({
   timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
@@ -17,39 +16,37 @@ export class BattleLog {
   userId: User; // 작성자
 
   // 방어덱 정보
-  @Prop({ type: DeckInfo })
+  @Prop({ type: DeckInfo, required: true })
   defenseDeck: DeckInfo;
 
   // 공격덱 정보
-  @Prop({ type: DeckInfo })
+  @Prop({ type: DeckInfo, required: true })
   attackDeck: DeckInfo;
 
-  @Prop({ type: String, enum: ['선속공', '후속공'], required: true })
-  speed: string; // 선속공 | 후속공
-
-  @Prop({ type: String, enum: ['승리', '패배'], required: true })
-  result: string; // 전투 결과
-
+  //선속공 정보
   @Prop({
     type: Number,
+    enum: Object.values(BattleSpeed).filter((v) => typeof v === 'number'),
     required: true,
-    enum: Object.values(BattleEvaluation).filter(
-      (v) => typeof v === 'number',
-    ),
+    default: BattleSpeed.FIRST_STRIKE,
   })
-  evaluation: BattleEvaluation; //전투 평가
+  speed: BattleSpeed;
 
-  @Prop({ type: String, maxlength: 500 })
-  comment?: string; // 코멘트 (선택)
+  //승리 여부
+  @Prop({
+    type: Number,
+    enum: Object.values(BattleResult).filter((v) => typeof v === 'number'),
+    required: true,
+  })
+  result: BattleResult;
 
-  @Prop({ type: Number, default: 0 })
-  upvoteCount: number; //추천
-
-  @Prop({ type: Number, default: 0 })
-  downvoteCount: number; //비추천
-
-  @Prop({ type: Boolean, default: false })
-  isHidden: boolean; // 비추천 비율이 높아 숨김 처리 여부
+  //전투 평가
+  @Prop({
+    type: Number,
+    enum: Object.values(BattleEvaluation).filter((v) => typeof v === 'number'),
+    required: true,
+  })
+  evaluation: BattleEvaluation;
 
   @Prop({ type: Boolean, default: false })
   isDeleted: boolean; // Soft delete 용
@@ -74,24 +71,9 @@ BattleLogSchema.pre(/^find/, function (this: Query<BattleLogDocument, BattleLogD
 // 1. "내가 쓴 로그" 검색용
 BattleLogSchema.index({ userId: 1, isDeleted: 1 });
 
-// 3. "추천순" 정렬용
-BattleLogSchema.index({
-  "defenseDeck.heroes": 1, // 1순위: 방어덱 필터
-  upvoteCount: -1,       // 2순위: 추천순 정렬
-  isDeleted: 1,
-});
-
-// 4. "최신순" 정렬용
+// 2. 방어덱 별 "최신순" 정렬용
 BattleLogSchema.index({
   "defenseDeck.heroes": 1, // 1순위: 방어덱 필터
   createdAt: -1,         // 2순위: 최신순 정렬
-  isDeleted: 1,
-});
-
-// 5. 공격덱 기준 
-BattleLogSchema.index({
-  "defenseDeck.heroes": 1,
-  "attackDeck.heroes": 1,
-  result: 1, // 승/패 결과
   isDeleted: 1,
 });

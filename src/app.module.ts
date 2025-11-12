@@ -10,7 +10,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import * as Joi from 'joi';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
-import { DefenseSetModule } from './defense-set/defense-set.module';
 import { BattleLogModule } from './battle-log/battle-log.module';
 import { StatsModule } from './stats/stats.module';
 
@@ -41,7 +40,6 @@ import { StatsModule } from './stats/stats.module';
     AuthModule,
     UserModule,
     HeroModule,
-    DefenseSetModule,
     BattleLogModule,
     StatsModule
   ],

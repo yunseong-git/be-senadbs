@@ -1,86 +1,113 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types, FilterQuery } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { BattleLog, BattleLogDocument } from './schemas/battle-log.schema';
 import { CreateBattleLogDto } from './dto/create-battle-log.dto';
-import { QueryBattleLogDto } from './dto/query-battle-log.dto';
-import { UpdateBattleLogDto } from './dto/update-battle-log.dto';
+import { StatsService } from 'src/stats/services/stats.service';
+import { BattleEvaluation, BattleResult } from './schemas/battle-log.enum';
+import { DeckInfoDto } from './dto/create-battle-log.dto';
 
 @Injectable()
 export class BattleLogService {
-  constructor(@InjectModel(BattleLog.name) private readonly battleLogModel: Model<BattleLogDocument>) { }
+  constructor(
+    @InjectModel(BattleLog.name)
+    private readonly battleLogModel: Model<BattleLogDocument>,
+    private readonly statsService: StatsService,
+  ) { }
 
-  async create(dto: CreateBattleLogDto, userId: Types.ObjectId) {
-    const newSet = new this.battleLogModel({
+  /**
+   * 신규 배틀로그 1건 생성
+   */
+  async create(dto: CreateBattleLogDto, userId: Types.ObjectId,): Promise<BattleLogDocument> {
+
+    // 덱 정보 정렬 (통계 집계를 위해)
+    this._sortDeckInfo(dto.attackDeck);
+    this._sortDeckInfo(dto.defenseDeck);
+
+    // 2. evaluation 조건부 기본값 처리
+    let finalEvaluation = dto.evaluation;
+    if (finalEvaluation == null) {
+      finalEvaluation =
+        dto.result === BattleResult.WIN
+          ? BattleEvaluation.NORMAL_WIN
+          : BattleEvaluation.NORMAL_LOSE;
+    }
+
+    // 3. 로그 생성
+    const newLog = new this.battleLogModel({
       ...dto,
+      evaluation: finalEvaluation,
       userId: userId,
+      // speed는 DTO에 없으면 스키마의 default(1)가 적용됨
     });
-    return newSet.save();
+
+    const savedLog = await newLog.save();
+
+    // 4. [중요] 통계 업데이트는 "Fire-and-Forget" (비동기 처리)
+    // SQS 도입 전까지는 이 방식을 사용
+    this.statsService.updateStats(savedLog).catch((err) => {
+      // (실제 프로덕션에서는 Sentry/Datadog 등 에러 로깅 필요)
+      console.error('Failed to update stats in background:', err);
+    });
+
+    return savedLog; // 5. 클라이언트에게는 저장된 로그 즉시 반환
   }
 
-  async findAll(dto: QueryBattleLogDto) {
-    const { sortBy, page = '1', limit = '20', heroId } = dto;
+  /**
+   * (개발용) 배틀로그 대량 생성
+   */
+  async createBulk(
+    dtos: CreateBattleLogDto[],
+    userId: Types.ObjectId,
+  ): Promise<{ count: number }> {
+    const documentsToInsert = dtos.map((dto) => {
 
-    // 기본 필터: 삭제되지 않은 항목
-    const filter: FilterQuery<BattleLogDocument> = {};
+      if (!dto.attackDeck.skillReservation) {
+        dto.attackDeck.skillReservation = [];
+      }
+      if (!dto.defenseDeck.skillReservation) {
+        dto.defenseDeck.skillReservation = [];
+      }
+      // 덱 정렬
+      this._sortDeckInfo(dto.attackDeck);
+      this._sortDeckInfo(dto.defenseDeck);
 
-    // 영웅 ID 필터링 (heroId가 쿼리로 들어온 경우)
-    if (heroId) {
-      filter['deck.heroes'] = new Types.ObjectId(heroId);
-    }
+      // evaluation 조건부 기본값
+      let finalEvaluation = dto.evaluation;
+      if (finalEvaluation == null) {
+        finalEvaluation =
+          dto.result === BattleResult.WIN
+            ? BattleEvaluation.NORMAL_WIN
+            : BattleEvaluation.NORMAL_LOSE;
+      }
+      return {
+        ...dto,
+        evaluation: finalEvaluation,
+        userId: userId,
+      };
+    });
 
-    // 정렬 (upvotes: 추천순, latest: 최신순)
-    const sort: Record<string, 1 | -1> = {};
-    if (sortBy === 'upvotes') {
-      sort.upvoteCount = -1;
-    } else {
-      sort.createdAt = -1;
-    }
+    // 3. 몽고DB에 대량 삽입
+    const insertedLogs = await this.battleLogModel.create(documentsToInsert);
 
-    // 페이지네이션
-    const nLimit = parseInt(limit, 10);
-    const nPage = parseInt(page, 10);
-    const skip = (nPage - 1) * nLimit;
+    // 4. (동일) 모든 로그에 대해 통계 업데이트 비동기 실행
+    // (Promise.allSettled를 써서 하나가 실패해도 나머지는 실행되게 함)
+    Promise.allSettled(
+      insertedLogs.map((log) =>
+        this.statsService.updateStats(log).catch((err) => {
+          console.error('Failed to update stats in background (bulk):', err);
+        }),
+      ),
+    );
 
-    // 데이터와 총 카운트를 병렬로 조회
-    const [data, total] = await Promise.all([
-      this.battleLogModel.find(filter).sort(sort).skip(skip).limit(nLimit).lean().exec(),
-      this.battleLogModel.countDocuments(filter).exec(),
-    ]);
-
-    return { data, total, page: nPage, limit: nLimit };
-
+    return { count: insertedLogs.length };
   }
 
-  async findOne(id: string) {
-    const set = await this.battleLogModel.findOne({ _id: id }).lean().exec();
-
-    if (!set) {
-      throw new NotFoundException(`BattleLog with ID "${id}" not found.`);
-    }
-
-    return set;
+  /** 통계 집계를 위해 덱 정보를 정렬 (heroes)*/
+  private _sortDeckInfo(deck: DeckInfoDto): void {
+    deck.heroes.sort();
+    //DTO에서 undefined로 넘어올 경우를 대비해 빈 배열[]로 할당
+    if (!deck.skillReservation) { deck.skillReservation = []; }
   }
 
-  async findMyGuides(userId: Types.ObjectId) {
-    return await this.battleLogModel.find({ userId: userId }).sort({ createdAt: -1 }).lean().exec();
-  }
-
-  async update(set: BattleLogDocument, updateDto: UpdateBattleLogDto) {
-    Object.assign(set, updateDto);
-    return await set.save();
-  }
-
-  async remove(set: BattleLogDocument) {
-    set.isDeleted = true;
-    await set.save();
-  }
-
-  async getCounterDeck() {
-
-  }
-
-  async getBestDefenseDecks() {
-
-  }
 }
