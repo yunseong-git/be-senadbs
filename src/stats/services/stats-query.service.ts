@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, ObjectId, Types } from 'mongoose';
 import { HeroesMatchStat, HeroesMatchStatDocument } from '../schemas/heroes-match-stats.schema';
 import { SkillsMatchStat, SkillsMatchStatDocument, } from '../schemas/skills-match-stat.schema';
 import { GetHeroesStatsQueryDto } from '../dto/query-heroes-stats.schema';
@@ -13,15 +13,26 @@ export class StatsQueryService {
     @InjectModel(SkillsMatchStat.name) private readonly skillsMatchStatModel: Model<SkillsMatchStatDocument>,
   ) { }
 
+  async get(id: string) {
+    const result = await this.heroesMatchStatModel.findById(id);
+    console.log(result)
+    return result
+  }
+
+
   /**방어덱 영웅들로 매치업 통계 조회*/
   async getHeroesMatchStats(dto: GetHeroesStatsQueryDto): Promise<HeroesStatsResponse[]> {
     // 쿼리를 위해 DTO의 영웅 ID 배열을 정렬
     const sortedHeroIds = dto.heroes.sort().map((id) => new Types.ObjectId(id));
 
+    console.log(sortedHeroIds)
+
     // 정렬된 덱 ID로 통계 컬렉션 조회
     const filter = {
       defenseDeckHeroes: sortedHeroIds,
     };
+
+    console.log(filter)
 
     // 승률(attackWinCount)이 높은 순으로 정렬
     const stats = await this.heroesMatchStatModel
@@ -29,6 +40,9 @@ export class StatsQueryService {
       .sort({ attackWinCount: -1 })
       .lean()
       .exec();
+
+
+    console.log(stats)
 
     // 데이터매핑-> HeroesStatsResponse[]
     return stats.map((stat) => {

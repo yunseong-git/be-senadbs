@@ -9,7 +9,7 @@ import { ParseObjectIdPipe } from '@nestjs/mongoose';
 export class StatsController {
   constructor(private readonly statsQueryService: StatsQueryService) { }
   @Public()
-  @Get('heroes')
+  @Get()
   async getHeoresMatchStats(@Query() query: GetHeroesStatsQueryDto): Promise<HeroesStatsResponse[]> {
     return await this.statsQueryService.getHeroesMatchStats(query);
   }

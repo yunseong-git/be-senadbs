@@ -124,7 +124,7 @@ export class BattleLogService {
 
   /** 통계 집계를 위해 덱 정보를 정렬 (heroes)*/
   private _sortDeckInfo(deck: DeckInfoDto): void {
-    deck.heroes.sort();
+    deck.heroes.sort().map((id) => new Types.ObjectId(id));
     //DTO에서 undefined로 넘어올 경우를 대비해 빈 배열[]로 할당
     if (!deck.skillReservation) { deck.skillReservation = []; }
   }
