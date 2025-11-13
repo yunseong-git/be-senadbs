@@ -9,8 +9,8 @@ export type SkillsStatsResponse = {
   matchCount: number;
   winRate: number;
   avgEvaluation: number;
-  upvoteCount: number;
-  downvoteCount: number;
+  buffCount: number;
+  nurfCount: number;
 }
 
 export type HeroesStatsResponse = {
@@ -20,6 +20,6 @@ export type HeroesStatsResponse = {
   matchCount: number;
   winRate: number;
   avgEvaluation: number;
-  upvoteCount: number;
-  downvoteCount: number;
+  buffCount: number;
+  nurfCount: number;
 }

@@ -1,13 +1,5 @@
 import {
-  IsArray,
-  IsEnum,
-  IsMongoId,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  ValidateNested,
-  ArrayMinSize,
-  ArrayMaxSize,
+  IsArray, IsEnum, IsMongoId, IsNotEmpty, IsNumber, IsOptional, ValidateNested, ArrayMinSize, ArrayMaxSize, ArrayNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Types } from 'mongoose';
@@ -35,7 +27,7 @@ export class DeckInfoDto {
   skillReservation?: SkillReservationDto[];
 }
 
-export class CreateBattleLogDto {
+class CreateBattleLogDto {
   @IsNumber()
   version: number;
 
@@ -60,4 +52,14 @@ export class CreateBattleLogDto {
   @IsOptional()
   @IsEnum(BattleEvaluation)
   evaluation?: BattleEvaluation;
+}
+
+export class CreateBattleLogBatchDto {
+  /** 전송할 배틀로그 배열 (최대 5개) */
+  @IsArray()
+  @ArrayNotEmpty() // 1. 최소 1개는 있어야 함
+  @ArrayMaxSize(5) // 2. 최대 5개 제한
+  @ValidateNested({ each: true }) // 3. 배열 안의 DTO도 유효성 검사
+  @Type(() => CreateBattleLogDto)
+  logs: CreateBattleLogDto[];
 }

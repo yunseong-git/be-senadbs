@@ -31,10 +31,10 @@ export class SkillsMatchStat {
   attackWinCount: number;
 
   @Prop({ type: Number, default: 0 })
-  upvoteCount: number;
+  buffCount: number;
 
   @Prop({ type: Number, default: 0 })
-  downvoteCount: number;
+  nurfCount: number;
 
   @Prop({ type: Number, default: 0 })
   totalEvaluationScore: number;

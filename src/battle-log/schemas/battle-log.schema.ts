@@ -4,10 +4,7 @@ import { User } from '../../user/schemas/user.schema';
 import { BattleEvaluation, BattleResult, BattleSpeed } from './battle-log.enum';
 import { DeckInfo } from './deck-info.schema';
 
-@Schema({
-  timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-  collection: 'battlelogs', // Mongoose의 자동복수형(battlelogs) 대신 명시
-})
+@Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' }, collection: 'battlelogs', })
 export class BattleLog {
   @Prop({ type: Number, required: true })
   version: number; //버전
@@ -50,6 +47,9 @@ export class BattleLog {
 
   @Prop({ type: Boolean, default: false })
   isDeleted: boolean; // Soft delete 용
+
+  @Prop({ type: Number, required: true })
+  reportCount: number;
 }
 
 export type BattleLogDocument = HydratedDocument<BattleLog>;

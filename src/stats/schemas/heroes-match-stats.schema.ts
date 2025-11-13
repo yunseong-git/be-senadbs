@@ -28,11 +28,11 @@ export class HeroesMatchStat {
 
   // 추천
   @Prop({ type: Number, default: 0 })
-  upvoteCount: number;
+  buffCount: number;
 
   // 비추천
   @Prop({ type: Number, default: 0 })
-  downvoteCount: number;
+  nurfCount: number;
 
   // 평가(evaluation) 점수 총합 (평균 계산용)
   @Prop({ type: Number, default: 0 })

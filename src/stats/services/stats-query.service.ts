@@ -36,8 +36,8 @@ export class StatsQueryService {
         matchCount,
         attackWinCount,
         totalEvaluationScore,
-        upvoteCount,
-        downvoteCount,
+        buffCount,
+        nurfCount,
       } = stat;
 
       // 0으로 나누기 방지
@@ -52,8 +52,8 @@ export class StatsQueryService {
         matchCount,
         winRate: parseFloat(winRate.toFixed(2)),
         avgEvaluation: parseFloat(avgEvaluation.toFixed(2)),
-        upvoteCount: upvoteCount,
-        downvoteCount: downvoteCount,
+        buffCount: buffCount,
+        nurfCount: nurfCount,
       };
     });
   }
@@ -77,8 +77,8 @@ export class StatsQueryService {
         matchCount,
         attackWinCount,
         totalEvaluationScore,
-        upvoteCount,
-        downvoteCount,
+        buffCount,
+        nurfCount,
       } = stat;
 
       const winRate =
@@ -93,8 +93,8 @@ export class StatsQueryService {
         matchCount,
         winRate: parseFloat(winRate.toFixed(2)),
         avgEvaluation: parseFloat(avgEvaluation.toFixed(2)),
-        upvoteCount: upvoteCount,
-        downvoteCount: downvoteCount,
+        buffCount: buffCount,
+        nurfCount: nurfCount,
       };
     });
   }

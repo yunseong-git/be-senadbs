@@ -4,6 +4,8 @@ import { BattleLogController } from './battle-log.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BattleLogSchema } from './schemas/battle-log.schema';
 import { StatsModule } from 'src/stats/stats.module';
+import { ResourceOwnerGuard } from 'src/common/guards/resource-owner.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -11,6 +13,10 @@ import { StatsModule } from 'src/stats/stats.module';
     StatsModule
   ],
   controllers: [BattleLogController],
-  providers: [BattleLogService],
+  providers: [
+    BattleLogService,
+    ResourceOwnerGuard,
+    RolesGuard
+  ],
 })
 export class BattleLogModule { }

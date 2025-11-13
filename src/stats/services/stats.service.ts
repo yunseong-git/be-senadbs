@@ -66,6 +66,91 @@ export class StatsService {
     return statDoc._id;
   }
 
+  /**
+     * BattleLog가 삭제된 후 호출되는 메인 통계 차감 함수 (비동기)
+     * @param log 방금 삭제된 BattleLog Document
+     */
+  async decrementStats(log: BattleLogDocument): Promise<void> {
+    // 1. [직렬 처리] 부모 ID를 먼저 찾아야 함
+    const heroesHash = this._createHeroesHash(log);
+    const parentStat = await this.heroesMatchStatModel
+      .findOne({ heroesHash: heroesHash }, { _id: 1 })
+      .lean();
+
+    // 2. 부모 통계가 없으면 (뭔가 꼬임), 스킬 통계도 찾을 수 없으므로 중단
+    if (!parentStat) {
+      this.logger.warn(
+        `[Decrement] HeroesMatchStat not found for hash ${heroesHash}. Log ID: ${log._id}`,
+      );
+      return;
+    }
+
+    const parentStatId = parentStat._id;
+    const skillsHash = this._createSkillsHash(log, parentStatId);
+
+    // 3. 2개의 통계 컬렉션을 병렬로 차감
+    const results = await Promise.allSettled([
+      this._decrementHeroesMatchStats(heroesHash, log),
+      this._decrementSkillsMatchStats(parentStatId, skillsHash, log),
+    ]);
+
+    // 4. 에러 핸들링
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const target = index === 0 ? 'HeroesMatchStat' : 'SkillsMatchStat';
+        this.logger.error(
+          `Failed to DECREMENT ${target} for log ${log._id}: ${result.reason}`,
+        );
+      }
+    });
+  }
+
+  /**
+   * [신규] HeroesMatchStat 통계 차감
+   */
+  private async _decrementHeroesMatchStats(
+    heroesHash: string,
+    log: BattleLogDocument,
+  ): Promise<void> {
+    const filter = { heroesHash: heroesHash };
+
+    const update = {
+      $inc: {
+        matchCount: -1, // 👈 1 차감
+        attackWinCount: log.result === BattleResult.WIN ? -1 : 0, // 👈 승리했다면 1 차감
+        totalEvaluationScore: -log.evaluation, // 👈 평가 점수 차감
+      },
+    };
+
+    // 5. [중요] upsert: false. (존재하는 문서만 차감)
+    await this.heroesMatchStatModel.updateOne(filter, update);
+  }
+
+  /**
+   * [신규] SkillsMatchStat 통계 차감
+   */
+  private async _decrementSkillsMatchStats(
+    parentStatId: Types.ObjectId,
+    skillsHash: string,
+    log: BattleLogDocument,
+  ): Promise<void> {
+    const filter = {
+      heroesMatchStatId: parentStatId,
+      skillsHash: skillsHash,
+    };
+
+    const update = {
+      $inc: {
+        matchCount: -1, // 👈 1 차감
+        attackWinCount: log.result === BattleResult.WIN ? -1 : 0, // 👈 승리했다면 1 차감
+        totalEvaluationScore: -log.evaluation, // 👈 평가 점수 차감
+      },
+    };
+
+    // 5. [중요] upsert: false.
+    await this.skillsMatchStatModel.updateOne(filter, update);
+  }
+
   /**스킬 매치 통계 업데이트 (SkillsMatchStat)*/
   private async _updateSkillsMatchStats(log: BattleLogDocument, parentStatId: Types.ObjectId): Promise<void> {
 
